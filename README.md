@@ -1,4 +1,4 @@
-# glpscrk
+# glpscrck
 
 GLPSCRCK - A Powerful Password Cracker Tool
 
