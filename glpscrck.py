@@ -22,7 +22,7 @@ def load_wordlist(file_path):
 def get_default_headers(user_agents):
     user_agent = random.choice(user_agents)
     return {
-        'User -Agent': user_agent,
+        'User  -Agent': user_agent,
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
         'Accept-Encoding': 'gzip, deflate, br',
@@ -118,10 +118,30 @@ def update_code():
     except subprocess.CalledProcessError as e:
         logging.error(f"{Fore.RED}Failed to update code: {e}{Style.RESET_ALL}")
 
+def show_available_platforms():
+    platforms = [
+        'gmail',
+        'facebook',
+        'instagram',
+        'twitter',
+        'linkedin',
+        'yahoo',
+        'wordpress',
+        'github',
+        'pinterest',
+        'snapchat',
+        'http',
+        'https',
+        'ftp',
+        'ssh',
+        'smtp',
+    ]
+    logging.info(f"{Fore.CYAN}Available platforms: {', '.join(platforms)}{Style.RESET_ALL}")
+
 def parse_args():
     parser = argparse.ArgumentParser(description="GLPSCRCK - A Powerful Password Cracker Tool")
     
-    subparsers = parser.add_subparsers(dest='mode', help='Choose the mode: attack, generate, or update')
+    subparsers = parser.add_subparsers(dest='mode', help='Choose the mode: attack, generate, update, or platforms')
 
     attack_parser = subparsers.add_parser('attack', help='Brute-force attack mode')
     attack_parser.add_argument('-u', '--username', help='Single username', type=str)
@@ -140,6 +160,8 @@ def parse_args():
     generate_parser.add_argument('-o', '--output', help='Output file to save the wordlist', type=str, default='generated_passwords.txt')
 
     update_parser = subparsers.add_parser('update', help='Update the code from GitHub repository')
+
+    platforms_parser = subparsers.add_parser('platforms', help='Show available platforms')
 
     return parser.parse_args()
 
@@ -163,9 +185,12 @@ def main():
 
     elif args.mode == 'update':
         update_code()
+
+    elif args.mode == 'platforms':
+        show_available_platforms()
     
     else:
-        print("Please choose a valid mode: 'attack', 'generate', or 'update'.")
+        print("Please choose a valid mode: 'attack', 'generate', 'update', or 'platforms'.")
 
 if __name__ == '__main__':
     main()
