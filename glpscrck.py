@@ -22,7 +22,7 @@ def load_wordlist(file_path):
 def get_default_headers(user_agents):
     user_agent = random.choice(user_agents)
     return {
-        'User  -Agent': user_agent,
+        'User -Agent': user_agent,
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
         'Accept-Encoding': 'gzip, deflate, br',
@@ -136,7 +136,7 @@ def show_available_platforms():
         'ssh',
         'smtp',
     ]
-    logging.info(f"{Fore.CYAN}Available platforms: {', '.join(platforms)}{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}Available platforms: {', '.join(platforms)}{Style.RESET_ALL}")
 
 def parse_args():
     parser = argparse.ArgumentParser(description="GLPSCRCK - A Powerful Password Cracker Tool")
@@ -166,6 +166,7 @@ def parse_args():
     return parser.parse_args()
 
 def main():
+    setup_logging(logging.INFO)  # Ensure logging is set up
     args = parse_args()
 
     if args.mode == 'attack':
