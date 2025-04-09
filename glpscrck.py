@@ -7,6 +7,49 @@ from tqdm import tqdm
 import logging
 from colorama import Fore, Style
 import subprocess
+import hashlib
+
+def identify_hash_type(hash_string):
+    hash_types = {
+        'md5': 32,
+        'sha1': 40,
+        'sha256': 64,
+        'sha512': 128,
+        'bcrypt': 'bcrypt',
+        'sha384': 96,
+    }
+    for hash_type, length in hash_types.items():
+        if len(hash_string) == length or (hash_type == 'bcrypt' and hash_string.startswith('$2')):
+            return hash_type
+    return None
+
+def hash_decrypt(hash_string, wordlist):
+    hash_type = identify_hash_type(hash_string)
+    if not hash_type:
+        logging.error(f"{Fore.RED}Unknown hash type for hash: {hash_string}{Style.RESET_ALL}")
+        return None
+
+    logging.info(f"{Fore.CYAN}Identified hash type: {hash_type}{Style.RESET_ALL}")
+
+    for password in wordlist:
+        if hash_type == 'md5':
+            if hashlib.md5(password.encode()).hexdigest() == hash_string:
+                return password
+        elif hash_type == 'sha1':
+            if hashlib.sha1(password.encode()).hexdigest() == hash_string:
+                return password
+        elif hash_type == 'sha256':
+            if hashlib.sha256(password.encode()).hexdigest() == hash_string:
+                return password
+        elif hash_type == 'sha512':
+            if hashlib.sha512(password.encode()).hexdigest() == hash_string:
+                return password
+        elif hash_type == 'bcrypt':
+            import bcrypt
+            if bcrypt.checkpw(password.encode(), hash_string.encode()):
+                return password
+
+    return None
 
 def setup_logging(level, log_file=None):
     logging.basicConfig(level=level, format='%(asctime)s - %(levelname)s - %(message)s', filename=log_file)
@@ -22,7 +65,7 @@ def load_wordlist(file_path):
 def get_default_headers(user_agents):
     user_agent = random.choice(user_agents)
     return {
-        'User -Agent': user_agent,
+        'User  -Agent': user_agent,
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
         'Accept-Encoding': 'gzip, deflate, br',
@@ -145,6 +188,7 @@ def parse_args():
 
     attack_parser = subparsers.add_parser('attack', help='Brute-force attack mode')
     attack_parser.add_argument('-u', '--username', help='Single username', type=str)
+    attack_parser.add_argument('-U', '--userlist', help='Path to wordlist of usernames', type=str)
     attack_parser.add_argument('-P', '--passlist', help='Path to wordlist of passwords', type=str)
     attack_parser.add_argument('-p', '--password', help='Single password', type=str)
     attack_parser.add_argument('-L', '--urllist', help='Path to wordlist of URLs', type=str)
@@ -154,6 +198,8 @@ def parse_args():
     attack_parser.add_argument('-F', '--platform', help='Platform name for success indicator', type=str)
     attack_parser.add_argument('-d', '--delay', help='Delay between requests in seconds', type=int, default=1)
     attack_parser.add_argument('--tor', action='store_true', help='Use Tor for requests')
+    attack_parser.add_argument('--hash', help='Hash to decrypt', type=str)
+    attack_parser.add_argument('--hash_wordlist', help='Path to wordlist for hash decryption', type=str)
 
     generate_parser = subparsers.add_parser('generate', help='Generate custom wordlist mode')
     generate_parser.add_argument('-W', '--words', help='Comma-separated words to generate password list', type=str)
@@ -166,7 +212,7 @@ def parse_args():
     return parser.parse_args()
 
 def main():
-    setup_logging(logging.INFO)  # Ensure logging is set up
+    setup_logging(logging.INFO)
     args = parse_args()
 
     if args.mode == 'attack':
@@ -179,7 +225,15 @@ def main():
             return
 
         run_brute_force(usernames, passwords, urls, 'username', 'password', args.method, args.timeout, args.platform, args.delay, args.tor)
-    
+
+        if args.hash:
+            hash_wordlist = load_wordlist(args.hash_wordlist) if args.hash_wordlist else []
+            decrypted_password = hash_decrypt(args.hash, hash_wordlist)
+            if decrypted_password:
+                logging.info(f"{Fore.GREEN}Decrypted password for hash {args.hash}: {decrypted_password}{Style.RESET_ALL}")
+            else:
+                logging.info(f"{Fore.RED}Failed to decrypt hash: {args.hash}{Style.RESET_ALL}")
+
     elif args.mode == 'generate':
         words = args.words.split(',') if args.words else []
         generate_wordlist(words, args.output)
